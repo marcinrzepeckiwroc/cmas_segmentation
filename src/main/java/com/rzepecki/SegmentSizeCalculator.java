@@ -1,49 +1,39 @@
 package com.rzepecki;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SegmentSizeCalculator {
 
-    //constant value
-    public static final int OFDMSymbol = 12*14;
-    public static final int NumOfSymPbch = 6*12*4;
-    public static final int NumOfSymSyncCh = 6*12*2;
-    public static final int NumModBits = 2; //LTE_CP_35259
-    public static final int NumOfCrcBits = 24; //LTE_CP_35258
-    List<Integer> msgIdPrioList = new ArrayList<Integer>();
+    int notLastSegmentSize;
+    int segments;
+    int lastSegmentSize;
 
-
-    boolean actCMAS = true;
-    boolean actCmasConfigurablePrio = true;
-
-    int cmasDefaultPrio = 10;
-    int cmasDefaultSsf = 0;
-
-    //prio
-    int msgIdFirst = 5000;
-    int msgIdLast = 5002;
-    int cmasPrio = 10;
-    int cmasSsf = 100;
-
-    public List<Integer> prioList(){
-        msgIdPrioList.add(7000);
-        msgIdPrioList.add(7001);
-        return msgIdPrioList;
+    public int getNotLastSegmentSize() {
+        return notLastSegmentSize;
     }
 
-    //zmienne NOKLTE:LNCEL_FDD
-    double dlChBw = 5;
-    String dlMimoMode = "Closed Loop Mimo"; //dla kazdej celki
-    int maxNrSymPdcch = 3; //dla kazdej celki
-    int NumOfSymPdcch = maxNrSymPdcch;
-    int maxCrSibDl = 26; //dla kazdej celki
-    String dlsDciCch = "DCI format 1C";  //dla kazdej celki
+    public void setNotLastSegmentSize(int notLastSegmentSize) {
+        this.notLastSegmentSize = notLastSegmentSize;
+    }
+
+    public int getSegments() {
+        return segments;
+    }
+
+    public void setSegments(int segments) {
+        this.segments = segments;
+    }
+
+    public int getLastSegmentSize() {
+        return lastSegmentSize;
+    }
+
+    public void setLastSegmentSize(int lastSegmentSize) {
+        this.lastSegmentSize = lastSegmentSize;
+    }
 
     public int defaultSize(int msgSize, int dataCodingScheme){
-
         int messageSize = msgSize+dataCodingScheme;
         if(messageSize%64==0){
             return messageSize/64;
@@ -52,13 +42,14 @@ public class SegmentSizeCalculator {
         }
     }
 
-    public int customSize(int msgSize, int dataCodingScheme, int segmentSize){
+    public void customSize(int msgSize, int dataCodingScheme, int segmentSize){
         int bytesSegment = segmentSize-11;
+        setNotLastSegmentSize(bytesSegment);
         int messageSize = msgSize+dataCodingScheme;
         int segments = messageSize/bytesSegment;
+        setSegments(segments);
         int mod = messageSize%bytesSegment;
-        System.out.println("byte "+bytesSegment+"segmentow "+segments+" ostatni "+mod);
-        return 0;
+        setLastSegmentSize(mod);
     }
 
     //base on LTE_CP_100203
@@ -73,23 +64,19 @@ public class SegmentSizeCalculator {
     //base on LTE_CP_78161
     public double maxTbsCalculator(double bw, int useMaxPRBperBand, int OFDMSymbol, int NumOfRefSym, int NumOfSymPdcch,
                                  int NumOfSymPbch, int NumOfSymSyncCh, int NumModBits, int maxCrSibDl, int NumOfCrcBits){
-        double maxTbs = 0;
         if(bw==1.4 || bw ==3){
-            maxTbs = (useMaxPRBperBand*(OFDMSymbol-NumOfRefSym-12*NumOfSymPdcch))*NumModBits*(maxCrSibDl/100.00)-NumOfCrcBits;
+            return (useMaxPRBperBand*(OFDMSymbol-NumOfRefSym-12*NumOfSymPdcch))*NumModBits*(maxCrSibDl/100.00)-NumOfCrcBits;
         }else {
-            maxTbs = ((useMaxPRBperBand*(OFDMSymbol-NumOfRefSym-12*NumOfSymPdcch))-NumOfSymPbch-NumOfSymSyncCh)*NumModBits*(maxCrSibDl/100.00)-NumOfCrcBits;
+            return ((useMaxPRBperBand*(OFDMSymbol-NumOfRefSym-12*NumOfSymPdcch))-NumOfSymPbch-NumOfSymSyncCh)*NumModBits*(maxCrSibDl/100.00)-NumOfCrcBits;
         }
-        return maxTbs;
     }
 
     public int useMaxPRBperBand(double bandwidth){
-        int prb = returnMaxPRB().get(bandwidth);
-        return prb;
+        return returnMaxPRB().get(bandwidth);
     }
 
     public int useMinPRBperBand(double bandwidth){
-        int prb = returnMinPRB().get(bandwidth);
-        return prb;
+        return returnMinPRB().get(bandwidth);
     }
 
     private Map<Double, Integer> returnMinPRB(){
@@ -175,7 +162,6 @@ public class SegmentSizeCalculator {
         trbMap.put(24, 1800);
         trbMap.put(25, 1864);
         trbMap.put(26, 2216);
-
         return trbMap;
     }
 
@@ -215,7 +201,6 @@ public class SegmentSizeCalculator {
         trbMap.put(29, 1480);
         trbMap.put(30, 1608);
         trbMap.put(31, 1736);
-
         return trbMap;
     }
 
@@ -261,6 +246,4 @@ public class SegmentSizeCalculator {
         }
         return tempValue;
     }
-
-
 }

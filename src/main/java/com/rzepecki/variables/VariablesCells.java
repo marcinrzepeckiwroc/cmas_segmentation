@@ -1,6 +1,6 @@
 package com.rzepecki.variables;
 
-public class VariablesClass {
+public class VariablesCells {
 
 
     //zmienne NOKLTE:LNCEL_FDD
@@ -11,10 +11,10 @@ public class VariablesClass {
     private int maxCrSibDl;
     private String dlsDciCch;
 
-    public VariablesClass() {
+    public VariablesCells() {
     }
 
-    public VariablesClass(double dlChBw, String dlMimoMode, int maxNrSymPdcch, int numOfSymPdcch, int maxCrSibDl, String dlsDciCch) {
+    public VariablesCells(double dlChBw, String dlMimoMode, int maxNrSymPdcch, int numOfSymPdcch, int maxCrSibDl, String dlsDciCch) {
 
         this.dlChBw = dlChBw;
         this.dlMimoMode = dlMimoMode;
@@ -24,7 +24,7 @@ public class VariablesClass {
         this.dlsDciCch = dlsDciCch;
     }
 
-    public VariablesClass(Builder builder){
+    public VariablesCells(Builder builder){
         this.dlChBw = builder.dlChBw;
         this.dlMimoMode = builder.dlMimoMode;
         this.maxNrSymPdcch = builder.maxNrSymPdcch;
@@ -116,8 +116,8 @@ public class VariablesClass {
             return this;
         }
 
-        public VariablesClass build(){
-            return new VariablesClass(this);
+        public VariablesCells build(){
+            return new VariablesCells(this);
         }
     }
 

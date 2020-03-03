@@ -1,164 +1,134 @@
 package com.rzepecki.gui;
 
+import com.rzepecki.Calculator;
+import com.rzepecki.SegmentSizeCalculator;
 import com.rzepecki.XMLparser;
-import com.rzepecki.variables.VariablesClass;
+import com.rzepecki.variables.VariableInferface;
+import com.rzepecki.variables.VariablesCells;
+import com.rzepecki.variables.VariablesDefault;
+import com.rzepecki.variables.VariablesPrio;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 
 public class GUIForm extends JFrame{
-    private JButton button1;
-    private JTextField textField1;
-    private JTextField textField2;
-    private JButton startButton;
     private JPanel panelForm;
-    private JButton stopButton;
-    private JLabel status;
-    private JScrollPane scroll;
+    private JPanel input;
+    private JPanel output;
     private JTextArea textArea;
-    private String[] regex = new String[0];
-    private String dir;
-    private boolean exit;
 
 
-    public boolean isExit() {
-        return exit;
-    }
 
-    public void setExit(boolean exit) {
-        this.exit = exit;
-    }
-
-    public String getDir() {
-        return dir;
-    }
-
-    private void setDir(String dir) {
-        this.dir = dir;
-    }
-
-    public String[] getRegex() {
-        return regex;
-    }
-
-    private void setRegex(String regex) {
-        String[] regextemp = regex.trim().split(",");
-        this.regex = new String[regextemp.length];
-        int count =0;
-        for (String text: regextemp) {
-            this.regex[count++] = text.trim();
-        }
-    }
-
-    public void setTextArea(String text) {
-
-        this.textArea.append(text);
-    }
-
-    public GUIForm(){
+    public GUIForm(final Map<String, VariableInferface> mapPrioValues,
+                   final Map<String, VariablesCells> mapCells,
+                   String[] filterTab,
+                   final List<Integer> getMsgList){
+        final JComboBox comboBox1 = new JComboBox(filterTab);
         panelForm.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panelForm.setLayout(new GridLayout(2,1));
+        input.setLayout(new BoxLayout(input, BoxLayout.PAGE_AXIS));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setTitle("Log parser ver. 0.2 beta");
+        setTitle("CMAS segment size calculator ver. 0.2 beta");
         setSize(500, 500);
+        JLabel label1 = new JLabel("Cell");
+        JLabel label2 = new JLabel("Message ID");
+        JLabel label3 = new JLabel("Message Lenght");
+        JLabel label4 = new JLabel("Data Coding Scheme");
+        final JTextField mesgId = new JTextField();
+        final JTextField mesgLenght = new JTextField();
+        final JTextField mesgCoding = new JTextField();
+        JButton button = new JButton();
+        button.setText("start");
+
         add(panelForm);
+        panelForm.add(input);
+        panelForm.add(output);
+        input.add(label1);
+        input.add(comboBox1);
+        input.add(label2);
+        input.add(mesgId);
+        input.add(label3);
+        input.add(mesgLenght);
+        input.add(label4);
+        input.add(mesgCoding);
+        input.add(button);
+
         textArea.setEditable(false);
 
-        JMenuBar mb=new JMenuBar();
-        JMenu jMenu = new JMenu("Help");
-        JMenuItem menu1=new JMenuItem("Report problem");
-        JMenuItem menu2=new JMenuItem("About");
-
-        jMenu.add(menu1);
-        jMenu.add(menu2);
-        mb.add(jMenu);
-        setJMenuBar(mb);
-
-
-        menu1.addActionListener(new ActionListener() {
+        button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("report problem");
-            }
-        });
+                textArea.setText(null);
 
-        menu2.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) { System.out.println("About");
-            }
-        });
+                Integer mesgIdText = Integer.parseInt(mesgId.getText());
+                Integer mesgLenghtText = Integer.parseInt(mesgLenght.getText());
+                Integer mesgCodingText = Integer.parseInt(mesgCoding.getText());
 
+                String comboText = (String)comboBox1.getSelectedItem();
 
-        button1.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fc = new JFileChooser();
-                //fc.setCurrentDirectory(new java.io.File("C:/Users/rzepecki/Desktop/Java/11/src/src"));
-                fc.setDialogTitle("choose main logs catalog");
-                fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-                fc.showOpenDialog(button1);
-                String path = fc.getSelectedFile().getAbsoluteFile().getPath();
-                //System.out.println(path);
-                textField1.setText(path);
-                try {
-                    parsXML(path);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                } catch (SAXException ex) {
-                    ex.printStackTrace();
-                } catch (ParserConfigurationException ex) {
-                    ex.printStackTrace();
+                VariablesCells cell = getCell(comboText, mapCells);
+                VariableInferface variable = getVariable(mesgIdText, getMsgList, mapPrioValues);
+
+                SegmentSizeCalculator sSC = new SegmentSizeCalculator();
+                Calculator calculator = new Calculator(mesgLenghtText, mesgCodingText, cell, variable, sSC);
+                textArea.append("Cell: "+comboText+"\n");
+                textArea.append("dlChBw: "+cell.getDlChBw()+" MHz\n");
+                textArea.append("dlMimoMode: "+cell.getDlMimoMode()+"\n");
+                textArea.append("maxNrSymPdcch: "+cell.getMaxNrSymPdcch()+"\n");
+                textArea.append("maxCrSibDl: "+cell.getMaxCrSibDl()+"\n");
+                textArea.append("dlsDciCch: "+cell.getDlsDciCch()+"\n");
+                textArea.append("-------------------------------------\n");
+                textArea.append("maxTBS "+calculator.getMaxByte()+" bytes"+"\n"+"minReasonableTbs "+calculator.getMinByte()+" bytes"+"\n");
+                textArea.append("cmasSsf "+variable.getCmasSsf()+"\n");
+                textArea.append("SIB12 Segment size NON default "+calculator.getSib12NonDefSize()+" bytes"+"\n");
+                textArea.append("SIB12 Segment size default "+calculator.getSib12DefSize()+" bytes (64 segments)"+"\n");
+                if(calculator.getSib12DefSize()<calculator.getSib12NonDefSize()){
+                    textArea.append("Default SIB12 size "+calculator.getSib12DefSize()+" New SIB12 size "+calculator.getSib12NonDefSize()+" | Default SIB12 size override by new segmentSize \n");
+                    textArea.append("--------RESULT------------\n");
+                    if((calculator.getSib12NonDefSize()-11)>=mesgLenghtText){
+                        textArea.append("1 segment "+calculator.getSib12NonDefSize()+" bytes\n");
+                    }else{
+                        textArea.append(sSC.getSegments()+" segments of "+sSC.getNotLastSegmentSize()+" bytes "+" / last segments "+sSC.getLastSegmentSize()+" bytes");
+                    }
+                }else{
+                    textArea.append("Default segment size will be use "+calculator.getSib12DefSize()+" bytes/segment (64 segments)");
                 }
             }
-
         });
+    }
 
-
-
-
-        startButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-//                Thread thread = new Thread(()->{
-//                    try {
-//                        setRegex(textField2.getText());
-//                        setDir(textField1.getText()); //ustawia ścieżkę
-////                        startParsing();
-//                    } catch (Exception ex) {
-//                        ex.printStackTrace();
-//                    }
-//                });
-
-
-
+    private VariablesCells getCell(String comboText, Map<String, VariablesCells> mapCells) {
+        for(Map.Entry<String, VariablesCells> entry: mapCells.entrySet()){
+            if(entry.getKey().equals(comboText)){
+                return entry.getValue();
             }
-        });
-
-
-
-    }
-
-    private void parsXML(String path) throws IOException, SAXException, ParserConfigurationException {
-        System.out.println("-----------------");
-        XMLparser xmLparser = new XMLparser();
-        Map<String, VariablesClass> map = xmLparser.xmlParser(path);
-        System.out.println(map.size());
-        for (Map.Entry<String,VariablesClass> entry :map.entrySet()){
-            System.out.println(entry.getKey());
-            System.out.println(entry.getValue().toString());
         }
-
+        return null;
     }
 
-
+    private VariableInferface getVariable(Integer mesgIdText, List<Integer> getMsgList, Map<String, VariableInferface> mapPrioValues) {
+        VariableInferface variable = null;
+        if(getMsgList.contains(mesgIdText)){
+            for(Map.Entry<String, VariableInferface> entry: mapPrioValues.entrySet()){
+                if(!entry.getKey().equals("default")){
+                    VariablesPrio variablesPrio = (VariablesPrio) entry.getValue();
+                    if(variablesPrio.getMsgList().contains(mesgIdText)){
+                        return entry.getValue();
+                    }
+                }
+            }
+        }else{
+            VariablesDefault variablesDefault = (VariablesDefault) mapPrioValues.get("default");
+            return mapPrioValues.get("default");
+        }
+        return variable;
+    }
 }
 
 
